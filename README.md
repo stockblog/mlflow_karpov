@@ -1,12 +1,12 @@
 ### Intro
-We will deploy MLflow in Mail.ru Cloud Solutions using S3 as artifact store, DBaaS Postgres as backend entity storage and Tracking Server on separate host.   
+We will deploy MLflow in VK Cloud using S3 as artifact store, DBaaS Postgres as backend entity storage and Tracking Server on separate host.   
 This is the most production ready scenario of deployment   
 https://mlflow.org/docs/latest/tracking.html#scenario-4-mlflow-with-remote-tracking-server-backend-and-artifact-stores
 
 
 ### 1. Create VM for mlflow
 https://mcs.mail.ru/help/ru_RU/create-vm/vm-quick-create   
-Tested with OS - Ubuntu 18.04   
+Tested with OS - Ubuntu 18.04 and Ubuntu 20.04  
 Record VM white ip and internal ip
 
 ### 2. Install Conda on VM created on step 1
@@ -132,27 +132,7 @@ Check that evrything is ok in logs
 head -n 95 ~/mlflow_logs/stdout.log 
 ```
 
-### 8. Create JupyterHub host
-https://mcs.mail.ru/help/ru_RU/ml-start/ml-info
-
-Login to VM with JupyterHub
-```console
-ssh -i REPLACE_WITH_YOUR_KEY ubuntu@REPLACE_WITH_YOUR_VM_IP
-```
-
-Open tmux and launch JupyterHub
-```console
-tmux
-
-jupyter-notebook --ip '*'
-```
-Copy string that looks like that   
-http://name_of_host:8888/?token=5d3d6b7a0551asdffds4190e8sdffsd329bee345esdfmkdfs2c042c0b7a5
-
-deattach from tmux session   
-ctrl + b d
-
-### 9. Config JupyterHub host
+### 8. Config JupyterHub host
 Set env variables
 
 ```console
@@ -176,10 +156,10 @@ aws_access_key_id = REPLACE_WITH_YOUR_KEY
 aws_secret_access_key = REPLACE_WITH_YOUR_SECRET_KEY
 ``````
 
-### 10. Install MLflow on JupyterHub host
-We will create separate environment, install MLflow and create kernel for JupyterHub with MLflow  
+### 9. Install MLflow on Jupyter
+Launch all comands from Jupyter terminal. You can open terminal from Jupyter UI.  
 ```console
-conda create -n mlflow_env
+conda init bash
 
 conda activate mlflow_env
 
@@ -196,11 +176,8 @@ conda install -c anaconda ipykernel
 python -m ipykernel install --user --name ex --display-name "Python (mlflow)"
 ``````
 
-### 11. Launch JupyterHub and test MLflow
-Your JupyterHub available on url like that    
-http://name_of_host:8888/?token=5d3d6b7a0551asdffds41sdvlgfd8sdffsd329bee345esdfmkdfs2c042c0b7dffb   
-
-You should get this url on step 8   
+### 10. Launch JupyterHub and test MLflow
+Your JupyterHub available on VM external IP   
 
 Launch a terminal in Jupyter and clone the mlflow repo   
 ```console
@@ -208,8 +185,10 @@ git clone https://github.com/stockblog/webinar_mlflow/ webinar_mlflow
 ```
 Open mlflow_demo.ipynb and launch cells
 
+### The following steps are not necessary to complete the homework. You can do them as an extra practice.
 
-### 12. Serve model from artifact store
+
+### 11. Serve model from artifact store
 Find URI of model in MLFlow UI   
 Connect to MLflow host created on step 1   
 ```console
@@ -220,7 +199,7 @@ mlflow models serve -m s3://BUCKET/FOLDER/EXPERIMENT_NUMBER/INTERNAL_MLFLOW_ID/a
 
 ```
 
-### 13. Serve model from the model registry
+### 12. Serve model from the model registry
 Register model in MLflow Models UI. Copy model name and paste it to example string
 ```console
 #EXAMPLE
@@ -229,7 +208,7 @@ mlflow models serve -m "models:/diabet_test/Staging"
 mlflow models serve -m "models:/YOUR_MODEL_NAME/STAGE"
 ```
 
-### 14. Test model 
+### 13. Test model 
 You may need to replace port from 8001 to default port 5001 if you did not set -p parameter in prev step
 
 ```console
@@ -239,7 +218,7 @@ curl -X POST -H "Content-Type:application/json; format=pandas-split" --data '{"c
 curl -X POST -H "Content-Type:application/json; format=pandas-split" --data '{"columns":["age", "sex", "bmi", "bp", "s1", "s2", "s3", "s4", "s5", "s6"], "data":[[0.0453409833354632, 0.0506801187398187, 0.0606183944448076, 0.0310533436263482, 0.0287020030602135, 0.0473467013092799, 0.0544457590642881, 0.0712099797536354, 0.133598980013008, 0.135611830689079]]}' http://0.0.0.0:8001/invocations
 ```
 
-### 15. Permanent serving of model
+### 14. Permanent serving of model
 Connect to MLflow host created on step 1  
 you can find MLFLOW_ENV_OF_MODEL when you launch model on step 11 or 12   
 
@@ -271,7 +250,7 @@ sudo systemctl start mlflow-model
 sudo systemctl status mlflow-model
 ```
 
-### 16. Build docker image with model
+### 15. Build docker image with model
 Prerequisites: install Docker   
 https://docs.docker.com/engine/install/ubuntu/   
 https://docs.docker.com/engine/install/linux-postinstall/   
