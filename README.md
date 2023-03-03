@@ -9,31 +9,17 @@ https://mcs.mail.ru/help/ru_RU/create-vm/vm-quick-create
 Tested with OS - Ubuntu 18.04 and Ubuntu 20.04  
 Record VM white ip and internal ip
 
-### 2. Install Conda on VM created on step 1
-You can access VM with command
-```console
-ssh -i REPLACE_WITH_YOUR_KEY ubuntu@REPLACE_WITH_YOUR_VM_IP
-```
+### 2. 
 
-Download and install Conda
-```console
-curl -O https://repo.anaconda.com/archive/Anaconda3-2020.11-Linux-x86_64.sh
-bash Anaconda3-2020.11-Linux-x86_64.sh
-exec bash
-```
 
 ### 3. Install MLflow 
-We will install MLflow in separate environment
-```console
-conda create -n mlflow_env
-conda activate mlflow_env
-conda install python
 
-pip install mlflow
-pip install boto3
+```console
+sudo pip install mlflow
+sudo pip install boto3
 
 sudo apt install gcc
-pip install psycopg2-binary
+sudo pip install psycopg2-binary
 ```
 
 ### 4. Create Postgres as a backend store
