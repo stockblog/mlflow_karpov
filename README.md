@@ -10,6 +10,11 @@ Tested with OS - Ubuntu 18.04 and Ubuntu 20.04
 Record VM white ip and internal ip
 
 ### 2. Install MLflow 
+Login to VM that was created on Step 1   
+You can access VM with command  
+```console
+ssh -i REPLACE_WITH_YOUR_KEY ubuntu@REPLACE_WITH_YOUR_VM_IP
+```
 
 ```console
 sudo pip install mlflow
@@ -72,7 +77,7 @@ Permanent serving of MLflow on the next step
 mlflow server --backend-store-uri postgresql://pg_user:pg_password@REPLACE_WITH_INTERNAL_IP_POSTGRESQL/db_name --default-artifact-root s3://REPLACE_WITH_YOUR_BUCKET/REPLACE_WITH_YOUR_DIRECTORY/ -h 0.0.0.0 -p 8000
 ```
 
-### 7. Enable MLflow as a systemd service
+### 6. Enable MLflow as a systemd service
 Create dirs for logs and errors
 ```console
 mkdir ~/mlflow_logs/
@@ -116,7 +121,7 @@ head -n 95 ~/mlflow_errors/stderr.log
 ```
 
 
-### 8. Install JupyterHub on VM from step 1
+### 7. Install JupyterHub on VM from step 1
 https://tljh.jupyter.org/en/latest/install/custom-server.html 
 
 ```console
@@ -128,7 +133,7 @@ curl -L https://tljh.jupyter.org/bootstrap.py | sudo -E python3 - --admin <admin
 This will take 5-10 minutes, and will say Done! when the installation process is complete
 Copy the Public IP of your server, and try accessing http://<public-ip> from your browser. If everything went well, this should give you a JupyterHub login page.
 
-### 9. Launch JupyterHub and test MLflow
+### 8. Launch JupyterHub and test MLflow
 Your JupyterHub available on VM external IP   
 
 Launch a terminal in Jupyter and clone the mlflow repo   
@@ -140,7 +145,7 @@ Open mlflow_demo.ipynb and launch cells
   
 ### The following steps are not necessary to complete the homework. You can do them as an extra practice.
 
-### 10. Serve model from artifact store
+### 9. Serve model from artifact store
 Find URI of model in MLFlow UI   
 Connect to MLflow host created on step 1   
 ```console
@@ -151,7 +156,7 @@ mlflow models serve -m s3://BUCKET/FOLDER/EXPERIMENT_NUMBER/INTERNAL_MLFLOW_ID/a
 
 ```
 
-### 11. Serve model from the model registry
+### 10. Serve model from the model registry
 Register model in MLflow Models UI. Copy model name and paste it to example string
 ```console
 #EXAMPLE
@@ -160,7 +165,7 @@ mlflow models serve -m "models:/diabet_test/Staging"
 mlflow models serve -m "models:/YOUR_MODEL_NAME/STAGE"
 ```
 
-### 12. Test model 
+### 11. Test model 
 You may need to replace port from 8001 to default port 5001 if you did not set -p parameter in prev step
 
 ```console
