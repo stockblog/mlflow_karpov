@@ -9,10 +9,7 @@ https://mcs.mail.ru/help/ru_RU/create-vm/vm-quick-create
 Tested with OS - Ubuntu 18.04 and Ubuntu 20.04  
 Record VM white ip and internal ip
 
-### 2. 
-
-
-### 3. Install MLflow 
+### 2. Install MLflow 
 
 ```console
 sudo pip install mlflow
@@ -22,11 +19,11 @@ sudo apt install gcc
 sudo pip install psycopg2-binary
 ```
 
-### 4. Create Postgres as a backend store
+### 3. Create Postgres as a backend store
 https://mcs.mail.ru/help/ru_RU/dbaas-start/db-postgres   
-Save credentials, DB name
+Save credentials, DB name, internal IP of DB
 
-### 5. Create S3 bucket and directory
+### 4. Create S3 bucket and directory
 The next step is creating a directory for our Tracking Server to log the Machine Learning models and other artifacts. 
 Remember that the Postgres database is only used for storing metadata regarding those models.
 We will use S3 as artifact storage.
@@ -38,7 +35,7 @@ Create account, access key id and secret key
 https://mcs.mail.ru/help/ru_RU/s3-start/s3-account 
 
 
-### 6. Launch MLflow
+### 5. Launch MLflow
 Login to VM that was created on Step 1   
 You can access VM with command  
 ```console
@@ -72,7 +69,6 @@ aws_secret_access_key = REPLACE_WITH_YOUR_SECRET_KEY
 This is test run, if you leave terminal MLflow will be unaccessible   
 Permanent serving of MLflow on the next step   
 ```console
-conda activate mlflow_env
 mlflow server --backend-store-uri postgresql://pg_user:pg_password@REPLACE_WITH_INTERNAL_IP_POSTGRESQL/db_name --default-artifact-root s3://REPLACE_WITH_YOUR_BUCKET/REPLACE_WITH_YOUR_DIRECTORY/ -h 0.0.0.0 -p 8000
 ```
 
@@ -100,7 +96,7 @@ RestartSec=30
 StandardOutput=file:/home/ubuntu/mlflow_logs/stdout.log
 StandardError=file:/home/ubuntu/mlflow_errors/stderr.log
 User=ubuntu
-ExecStart=/bin/bash -c 'PATH=/home/ubuntu/anaconda3/envs/mlflow_env/bin/:$PATH exec mlflow server --backend-store-uri postgresql://PG_USER:PG_PASSWORD@REPLACE_WITH_INTERNAL_IP_POSTGRESQL/DB_NAME --default-artifact-root s3://REPLACE_WITH_YOUR_BUCKET/REPLACE_WITH_YOUR_DIRECTORY/ -h 0.0.0.0 -p 8000' 
+ExecStart=/bin/bash -c 'PATH=/usr/bin/python3:$PATH exec mlflow server --backend-store-uri postgresql://PG_USER:PG_PASSWORD@REPLACE_WITH_INTERNAL_IP_POSTGRESQL/DB_NAME --default-artifact-root s3://REPLACE_WITH_YOUR_BUCKET/REPLACE_WITH_YOUR_DIRECTORY/ -h 0.0.0.0 -p 8000' 
 [Install]
 WantedBy=multi-user.target
 ```
@@ -116,53 +112,23 @@ sudo systemctl status mlflow-tracking
 Check that evrything is ok in logs
 ```console
 head -n 95 ~/mlflow_logs/stdout.log 
+head -n 95 ~/mlflow_errors/stderr.log
 ```
 
-### 8. Config JupyterHub host
-Set env variables
+
+### 8. Install JupyterHub on VM from step 1
+https://tljh.jupyter.org/en/latest/install/custom-server.html 
 
 ```console
-sudo nano /etc/environment
+sudo apt install python3 python3-dev git curl
 
-MLFLOW_TRACKING_URI=http://REPLACE_WITH_INTERNAL_IP_MLFLOW_VM:8000
-MLFLOW_S3_ENDPOINT_URL=https://hb.bizmrg.com
-```
-Log out, login to apply changes
-
-Create file with S3 credentials
-```console
-mkdir .aws
-
-nano ~/.aws/credentials
-```
-Copy and paste this in ~/.aws/credentials
-```
-[default]
-aws_access_key_id = REPLACE_WITH_YOUR_KEY
-aws_secret_access_key = REPLACE_WITH_YOUR_SECRET_KEY
+#Replace <admin-user-name> with the name of the first admin user for this JupyterHub. Choose any name you like (**don’t forget to remove the brackets!**). 
+curl -L https://tljh.jupyter.org/bootstrap.py | sudo -E python3 - --admin <admin-user-name>
 ``````
+This will take 5-10 minutes, and will say Done! when the installation process is complete
+Copy the Public IP of your server, and try accessing http://<public-ip> from your browser. If everything went well, this should give you a JupyterHub login page.
 
-### 9. Install MLflow on Jupyter
-Launch all comands from Jupyter terminal. You can open terminal from Jupyter UI.  
-```console
-conda init bash
-
-conda activate mlflow_env
-
-conda install python
-
-pip install mlflow
-
-pip install matplotlib
-pip install sklearn
-pip install boto3
-
-conda install -c anaconda ipykernel
-
-python -m ipykernel install --user --name ex --display-name "Python (mlflow)"
-``````
-
-### 10. Launch JupyterHub and test MLflow
+### 9. Launch JupyterHub and test MLflow
 Your JupyterHub available on VM external IP   
 
 Launch a terminal in Jupyter and clone the mlflow repo   
@@ -171,10 +137,10 @@ git clone https://github.com/stockblog/webinar_mlflow/ webinar_mlflow
 ```
 Open mlflow_demo.ipynb and launch cells
 
+  
 ### The following steps are not necessary to complete the homework. You can do them as an extra practice.
 
-
-### 11. Serve model from artifact store
+### 10. Serve model from artifact store
 Find URI of model in MLFlow UI   
 Connect to MLflow host created on step 1   
 ```console
@@ -185,7 +151,7 @@ mlflow models serve -m s3://BUCKET/FOLDER/EXPERIMENT_NUMBER/INTERNAL_MLFLOW_ID/a
 
 ```
 
-### 12. Serve model from the model registry
+### 11. Serve model from the model registry
 Register model in MLflow Models UI. Copy model name and paste it to example string
 ```console
 #EXAMPLE
@@ -194,7 +160,7 @@ mlflow models serve -m "models:/diabet_test/Staging"
 mlflow models serve -m "models:/YOUR_MODEL_NAME/STAGE"
 ```
 
-### 13. Test model 
+### 12. Test model 
 You may need to replace port from 8001 to default port 5001 if you did not set -p parameter in prev step
 
 ```console
@@ -202,80 +168,4 @@ You may need to replace port from 8001 to default port 5001 if you did not set -
 curl -X POST -H "Content-Type:application/json; format=pandas-split" --data '{"columns":["age", "sex", "bmi", "bp", "s1", "s2", "s3", "s4", "s5", "s6"], "data":[[0.0453409833354632, 0.0506801187398187, 0.0606183944448076, 0.0310533436263482, 0.0287020030602135, 0.0473467013092799, 0.0544457590642881, 0.0712099797536354, 0.133598980013008, 0.135611830689079]]}' http://0.0.0.0:8001/invocations
 
 curl -X POST -H "Content-Type:application/json; format=pandas-split" --data '{"columns":["age", "sex", "bmi", "bp", "s1", "s2", "s3", "s4", "s5", "s6"], "data":[[0.0453409833354632, 0.0506801187398187, 0.0606183944448076, 0.0310533436263482, 0.0287020030602135, 0.0473467013092799, 0.0544457590642881, 0.0712099797536354, 0.133598980013008, 0.135611830689079]]}' http://0.0.0.0:8001/invocations
-```
-
-### 14. Permanent serving of model
-Connect to MLflow host created on step 1  
-you can find MLFLOW_ENV_OF_MODEL when you launch model on step 11 or 12   
-
-sudo nano /etc/systemd/system/mlflow-model.service
-```console
-[Unit]
-Description=MLFlow Model Serving
-After=network.target
-
-[Service]
-Restart=on-failure
-RestartSec=30
-StandardOutput=file:/home/ubuntu/mlflow_logs/stdout.log
-StandardError=file:/home/ubuntu/mlflow_errors/stderr.log
-Environment=MLFLOW_TRACKING_URI=http://REPLACE_WITH_INTERNAL_IP_MLFLOW_VM:8000
-Environment=MLFLOW_CONDA_HOME=/home/ubuntu/anaconda3/
-Environment=MLFLOW_S3_ENDPOINT_URL=https://hb.bizmrg.com
-ExecStart=/bin/bash -c 'PATH=/home/ubuntu/anaconda3/envs/REPLACE_WITH_MLFLOW_ENV_OF_MODEL/bin/:$PATH exec mlflow models serve -m "models:/YOUR_MODEL_NAME/STAGE" -h 0.0.0.0 -p 8001'
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Then enable new service
-```console
-sudo systemctl daemon-reload
-sudo systemctl enable mlflow-model
-sudo systemctl start mlflow-model
-sudo systemctl status mlflow-model
-```
-
-### 15. Build docker image with model
-Prerequisites: install Docker   
-https://docs.docker.com/engine/install/ubuntu/   
-https://docs.docker.com/engine/install/linux-postinstall/   
-
-You may need to edit conda.yaml and add dependencies   
-You can find this file in artifact storage in folder artifacts/model   
-s3://BUCKET/FOLDER/EXPERIMENT_NUMBER/INTERNAL_MLFLOW_ID/artifacts/model   
-
-Example conda.yaml where we added scipy and boto3 libs to standart dependencies
-```console
-channels:
-- defaults
-- conda-forge
-dependencies:
-- python=3.6.6
-- pip
-- pip:
-  - mlflow
-  - scikit-learn==0.19.2
-  - cloudpickle==0.5.5
-  - scipy
-  - boto3
-name: mlflow-env
-```
-
-Build docker image with model
-```console
-#Example
-mlflow models build-docker -m "models:/diabet_test/Staging" -n "mlflow-diabetes-model"
-
-mlflow models build-docker -m "models:/YOUR_MODEL_NAME/STAGE" -n "DOCKER_IMAGE_NAME"
-```
-
-Launch container with model
-```
-docker run -p 5001:8080 "mlflow-diabetes-model"
-```
-
-Test model in docker
-```
-curl -X POST -H "Content-Type:application/json; format=pandas-split" --data '{"columns":["age", "sex", "bmi", "bp", "s1", "s2", "s3", "s4", "s5", "s6"], "data":[[0.0453409833354632, 0.0506801187398187, 0.0606183944448076, 0.0310533436263482, 0.0287020030602135, 0.0473467013092799, 0.0544457590642881, 0.0712099797536354, 0.133598980013008, 0.135611830689079]]}' http://127.0.0.1:5001/invocations
 ```
